@@ -73,8 +73,8 @@ ARG TARGETDIR
 COPY --from=heimdal-build ${TARGETDIR} ${TARGETDIR}
 # Configuring curl
 RUN cd ${SRCDIR}/curl-* \
-    && LDFLAGS="-static -L${TARGETDIR}/lib/" CPPFLAGS="-I${TARGETDIR}/include/" LIBS="-lbrotlidec-static -lbrotlicommon-static" PKG_CONFIG="pkg-config --static" ./configure --disable-shared --enable-ares --enable-alt-svc --with-ca-fallback --with-libssh2 --with-gssapi
-# --enable-mqtt --with-ssl --with-gnutls --with-mbedtls --with-nss --with-libmetalink
+    && LDFLAGS="-static -L${TARGETDIR}/lib/" CPPFLAGS="-I${TARGETDIR}/include/" LIBS="-lbrotlidec-static -lbrotlicommon-static" PKG_CONFIG="pkg-config --static" ./configure --disable-shared --enable-ares --enable-alt-svc --enable-mqtt --with-ca-fallback --with-libssh2 --with-gssapi
+# --with-ssl --with-gnutls --with-mbedtls --with-nss --with-libmetalink
 # Making curl
 RUN cd ${SRCDIR}/curl-* \
     && make -j8 curl_LDFLAGS=-all-static
