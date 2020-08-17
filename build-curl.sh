@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -e
 SCRIPT_DIR="$(dirname $0)"
-OUT_DIR="${SCRIPT_DIR}/out"
 
 ##Curl
 #If you prefer the latest release you can set it specifically
@@ -75,8 +74,8 @@ function build () {
     local heimdal_version=$(resolve_github_repo_version ${HEIMDAL_GITREPO_NAME} ${HEIMDAL_VERSION})
     
     echo "Build Curl version '${curl_version}' with Heimdal '${heimdal_version}'."
-    local image_name=curl:${curl_version}
-    docker build --target curl \
+    local image_name=curl-build:${curl_version}
+    docker build --target curl-build \
         -t ${image_name} \
         --build-arg CREATOR=$(resolve_current_repo_name) \
         --build-arg CURL_VERSION=${curl_version} \
@@ -84,17 +83,17 @@ function build () {
         --build-arg HEIMDAL_GITREPO_NAME=${HEIMDAL_GITREPO_NAME} \
         ${SCRIPT_DIR}
 
-    echo "Extract build artifacts to ${OUT_DIR}"
+    echo "Extract build artifacts to ${SCRIPT_DIR}"
     local curl_out_path="$(resolve_image_label ${image_name} 'curl.dir')"
-    local tmp_container_name=curl-$RANDOM
+    local tmp_container_name=curl-build-${curl_version}-$RANDOM
     docker create --name ${tmp_container_name} -l creator=$(resolve_current_repo_name) ${image_name}
-    mkdir -p ${OUT_DIR}
-    docker cp ${tmp_container_name}:${curl_out_path}/ ${OUT_DIR}
+    docker cp "${tmp_container_name}:${curl_out_path}" "${SCRIPT_DIR}"
     docker rm ${tmp_container_name}
 }
 
 function clean () {
     echo "Removing all temporary build images"
+    docker container prune --force --filter "label=creator=$(resolve_current_repo_name)"
     docker image prune --force --all --filter "label=creator=$(resolve_current_repo_name)"
 }
 

@@ -2,9 +2,6 @@ ARG CREATOR=static-curl
 ARG WORKDIR=/workspace
 ARG SRCDIR=${WORKDIR}/src
 ARG TARGETDIR=${WORKDIR}/target
-ARG OUTDIR=${WORKDIR}/out
-ARG CURL_VERSION=7.71.1
-ARG CURL_FINAL_BIN_PATH=${OUTDIR}/curl
 
 ## Build Base Image ##
 FROM alpine:edge as base-build
@@ -53,7 +50,7 @@ LABEL heimdal.dir=${TARGETDIR}
 FROM base-build as curl-build
 # Fetching Curl source
 ARG SRCDIR
-ARG CURL_VERSION
+ARG CURL_VERSION=7.71.1
 ARG CURL_GPG_KEY_URL="https://daniel.haxx.se/mykey.asc"
 ARG CURL_GPG_KEY_PATH=${SRCDIR}/curl-gpg.pub
 ARG CURL_TARBALL_FILENAME=curl-${CURL_VERSION}.tar.xz
@@ -82,28 +79,15 @@ RUN cd ${SRCDIR}/curl-* \
 RUN cd ${SRCDIR}/curl-* \
     && make -j8 curl_LDFLAGS=-all-static
 # Finishing up
-ARG CURL_FINAL_BIN_PATH
+ARG OUTDIR=${WORKDIR}/out
+ARG CURL_FINAL_BIN_PATH=${OUTDIR}/curl
 RUN mkdir -p $(dirname ${CURL_FINAL_BIN_PATH}) \
     && cd ${SRCDIR}/curl-* \
     && cp src/curl ${CURL_FINAL_BIN_PATH} \
-    && strip ${CURL_FINAL_BIN_PATH}
+    && strip ${CURL_FINAL_BIN_PATH} \
+    && cp ${CURL_FINAL_BIN_PATH} ${CURL_FINAL_BIN_PATH}-${CURL_VERSION}-$(uname -m)
 # Labels
 ARG CREATOR
 LABEL creator=${CREATOR}
 LABEL curl.version=${CURL_VERSION}
-ARG OUTDIR
-LABEL curl.dir=${OUTDIR}
-
-## Build Curl Image ##
-FROM alpine:edge as curl
-# Copying build artifacts
-ARG CURL_FINAL_BIN_PATH
-ARG CURL_VERSION
-COPY --from=curl-build ${CURL_FINAL_BIN_PATH} ${CURL_FINAL_BIN_PATH}
-RUN cp ${CURL_FINAL_BIN_PATH} ${CURL_FINAL_BIN_PATH}-${CURL_VERSION}-$(uname -m)
-# Labels
-ARG CREATOR
-LABEL creator=${CREATOR}
-LABEL curl.version=${CURL_VERSION}
-ARG OUTDIR
 LABEL curl.dir=${OUTDIR}
